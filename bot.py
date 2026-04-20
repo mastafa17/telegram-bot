@@ -14,3 +14,5 @@ def test(message):
 
 bot.remove_webhook()
 bot.infinity_polling(skip_pending=True)
+
+print(bot.get_me())
