@@ -1,17 +1,16 @@
 import telebot
 import os
 
-TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
 
-print("BOT IS RUNNING")
-print("BOT INFO:", bot.get_me())
-
-bot.delete_webhook()
+print("BOT STARTED")
 
 @bot.message_handler(func=lambda m: True)
 def all_messages(message):
-    print("🔥 GOT MESSAGE:", message.text)
+    print("GOT:", message.text)
     bot.reply_to(message, "OK")
 
-bot.infinity_polling()
+bot.remove_webhook()
+
+# مهم جداً: بدون أي proxy settings
+bot.infinity_polling(skip_pending=True)
