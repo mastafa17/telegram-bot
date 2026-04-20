@@ -1,50 +1,46 @@
 import time
 import requests
-from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 
 TOKEN = "8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4"
 CHAT_ID = "-1003949682698"
-PAGE_URL = "https://www.facebook.com/PrayerTimesForKirkuk/"
+RSS_URL = "https://rss.app/feeds/8znlULlLiittrnz2.xml"
 
-last_image = ""
+last_link = ""
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
-
-def get_latest_image():
+def get_latest_post():
     try:
-        r = requests.get(PAGE_URL, headers=headers, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
+        r = requests.get(RSS_URL, timeout=10)
+        root = ET.fromstring(r.content)
 
-        images = soup.find_all("img")
+        for item in root.iter("item"):
+            title = item.find("title").text
+            link = item.find("link").text
 
-        for img in images:
-            src = img.get("src")
-            if src and "scontent" in src:
-                return src
+            return title, link
 
     except Exception as e:
-        print("Fetch error:", e)
+        print("RSS error:", e)
 
-    return None
+    return None, None
 
 
-def send_photo(photo):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+def send_message(text):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     data = {
         "chat_id": CHAT_ID,
-        "photo": photo
+        "text": text
     }
     requests.post(url, data=data)
 
 
 while True:
-    img = get_latest_image()
+    title, link = get_latest_post()
 
-    if img and img != last_image:
-        send_photo(img)
-        last_image = img
-        print("📩 تم إرسال صورة جديدة")
+    if link and link != last_link:
+        msg = f"{title}\n{link}"
+        send_message(msg)
+        last_link = link
+        print("📩 تم إرسال منشور جديد")
 
     time.sleep(60)
