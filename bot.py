@@ -1,29 +1,34 @@
 import time
 import requests
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
 
-TOKEN = "8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4"
+TOKEN = "PUT_YOUR_TOKEN_HERE"
 CHAT_ID = "-1003949682698"
 PAGE_URL = "https://www.facebook.com/PrayerTimesForKirkuk/"
 
 last_image = ""
 
-driver = webdriver.Chrome()
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
 
 def get_latest_image():
-    driver.get(PAGE_URL)
-    time.sleep(6)
+    try:
+        r = requests.get(PAGE_URL, headers=headers, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    # نركز على صور المنشورات فقط
-    images = driver.find_elements(By.XPATH, "//div[contains(@class,'x1yztbdb')]//img")
+        images = soup.find_all("img")
 
-    for img in images:
-        src = img.get_attribute("src")
-        if src and "scontent" in src:
-            return src
+        for img in images:
+            src = img.get("src")
+            if src and "scontent" in src:
+                return src
+
+    except Exception as e:
+        print("Fetch error:", e)
 
     return None
+
 
 def send_photo(photo):
     url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
@@ -33,16 +38,13 @@ def send_photo(photo):
     }
     requests.post(url, data=data)
 
+
 while True:
-    try:
-        img = get_latest_image()
+    img = get_latest_image()
 
-        if img and img != last_image:
-            send_photo(img)
-            last_image = img
-            print("📩 تم إرسال صورة جديدة")
-
-    except Exception as e:
-        print("خطأ:", e)
+    if img and img != last_image:
+        send_photo(img)
+        last_image = img
+        print("📩 تم إرسال صورة جديدة")
 
     time.sleep(60)
