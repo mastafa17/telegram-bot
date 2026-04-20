@@ -58,10 +58,19 @@ monthly_times = {
 
 # ================== إرسال الأذان ==================
 def send_adhan(prayer):
-    text = f"🕌 حان الآن موعد صلاة {prayer}"
+    # نجيب الوقت من الجدول الحالي
+    today = datetime.now().day
+    time_now = monthly_times[today][prayer]
+
+    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
+
     try:
-        bot.send_photo(CHAT_ID, images[prayer], caption=text)
-        print(f"Sent {prayer}")
+        bot.send_photo(
+            CHAT_ID,
+            images[prayer],
+            caption=text
+        )
+        print(f"Sent {prayer} at {time_now}")
     except Exception as e:
         print("Error:", e)
 
