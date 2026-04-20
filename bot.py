@@ -3,9 +3,9 @@ import os
 from aiogram import Bot, Dispatcher, F, types
 
 # ضع التوكن الخاص بك هنا مؤقتاً للتجربة
-API_TOKEN = "ضع_توكن_بوتك_هنا"
+API_TOKEN = "8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4"
 
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4)
 dp = Dispatcher()
 
 @dp.message(F.photo)
