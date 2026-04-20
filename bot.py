@@ -1,6 +1,6 @@
 import telebot
 
-bot = telebot.TeleBot("8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4")  # 👈 أول شي تعريف البوت
+bot = telebot.TeleBot("BOT_TOKEN")  # 👈 أول شي تعريف البوت
 
 bot.remove_webhook()  # 👈 بعدها مباشرة
 
