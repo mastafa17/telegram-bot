@@ -1,6 +1,8 @@
 import telebot
 
-bot = telebot.TeleBot("YOUR_TOKEN")
+bot = telebot.TeleBot("YOUR_TOKEN")  # 👈 أول شي تعريف البوت
+
+bot.remove_webhook()  # 👈 بعدها مباشرة
 
 @bot.message_handler(content_types=['photo', 'document', 'text'])
 def handler(message):
@@ -13,7 +15,4 @@ def handler(message):
     else:
         bot.reply_to(message, message.content_type)
 
-# مهم جداً:
-bot.remove_webhook()
-
-bot.infinity_polling()
+bot.infinity_polling()  # 👈 تشغيل البوت
