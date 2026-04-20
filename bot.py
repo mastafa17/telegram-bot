@@ -1,26 +1,5 @@
-import asyncio
-import os
-from aiogram import Bot, Dispatcher, F, types
-
-# ضع التوكن الخاص بك هنا مؤقتاً للتجربة
-API_TOKEN = "8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4"
-
-bot = Bot(token=8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4)
-dp = Dispatcher()
-
-@dp.message(F.photo)
-async def handle_photos(message: types.Message):
-    # الحصول على ID الصورة بدقة عالية
+@bot.message_handler(content_types=['photo'])
+def get_file_id(message):
     file_id = message.photo[-1].file_id
-    await message.reply(f"وصلت الصورة بنجاح! ✅\n\nالـ ID الخاص بها هو:\n`{file_id}`", parse_mode="Markdown")
-
-@dp.message()
-async def any_message(message: types.Message):
-    await message.reply("أرسل لي صورة (Photo) وليس ملفاً لكي أعطيك الـ ID.")
-
-async def main():
-    print("البوت يعمل الآن.. أرسل الصور إليه للحصول على الـ ID")
-    await dp.start_polling(bot)
-
-if __name__ == '__main__':
-    asyncio.run(main())
+    print("FILE ID:", file_id)
+    bot.reply_to(message, file_id)
