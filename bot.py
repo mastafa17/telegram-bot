@@ -1,16 +1,19 @@
 import telebot
-import os
 
-bot = telebot.TeleBot(os.getenv("BOT_TOKEN"))
+bot = telebot.TeleBot("YOUR_TOKEN")
 
-print("BOT STARTED")
+@bot.message_handler(content_types=['photo', 'document', 'text'])
+def handler(message):
+    print("RECEIVED:", message.content_type)
 
-@bot.message_handler(func=lambda m: True)
-def all_messages(message):
-    print("GOT:", message.text)
-    bot.reply_to(message, "OK")
+    if message.content_type == "photo":
+        file_id = message.photo[-1].file_id
+        print("FILE ID:", file_id)
+        bot.reply_to(message, file_id)
+    else:
+        bot.reply_to(message, message.content_type)
 
+# مهم جداً:
 bot.remove_webhook()
 
-# مهم جداً: بدون أي proxy settings
-bot.infinity_polling(skip_pending=True)
+bot.infinity_polling()
