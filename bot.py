@@ -1,21 +1,17 @@
-import os
 import telebot
+import os
 
 TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(TOKEN)
 
-bot = telebot.TeleBot(TOKEN)أول شي تعريف البوت
+print("BOT IS RUNNING")
+print("BOT INFO:", bot.get_me())
 
-bot.remove_webhook()  # 👈 بعدها مباشرة
+bot.delete_webhook()
 
-@bot.message_handler(content_types=['photo', 'document', 'text'])
-def handler(message):
-    print("RECEIVED:", message.content_type)
+@bot.message_handler(func=lambda m: True)
+def all_messages(message):
+    print("🔥 GOT MESSAGE:", message.text)
+    bot.reply_to(message, "OK")
 
-    if message.content_type == "photo":
-        file_id = message.photo[-1].file_id
-        print("FILE ID:", file_id)
-        bot.reply_to(message, file_id)
-    else:
-        bot.reply_to(message, message.content_type)
-
-bot.infinity_polling()  # 👈 تشغيل البوت
+bot.infinity_polling()
