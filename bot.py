@@ -60,4 +60,4 @@ while True:
         last_link = link
         print("📩 تم إرسال منشور جديد")
 
-    time.sleep(60)
+    time.sleep(30)
