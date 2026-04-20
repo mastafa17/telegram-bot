@@ -1,6 +1,9 @@
+import os
 import telebot
 
-bot = telebot.TeleBot("BOT_TOKEN")  # 👈 أول شي تعريف البوت
+TOKEN = os.getenv("BOT_TOKEN")
+
+bot = telebot.TeleBot(TOKEN)أول شي تعريف البوت
 
 bot.remove_webhook()  # 👈 بعدها مباشرة
 
