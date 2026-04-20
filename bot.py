@@ -2,7 +2,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-TOKEN = "PUT_YOUR_TOKEN_HERE"
+TOKEN = "8559357103:AAGTeH5u4DiwDYZDBSDn4z1O7P3pBXwDse4"
 CHAT_ID = "-1003949682698"
 PAGE_URL = "https://www.facebook.com/PrayerTimesForKirkuk/"
 
