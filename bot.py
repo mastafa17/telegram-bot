@@ -75,13 +75,19 @@ def convert_to_utc(time_str):
     return utc_dt.strftime("%H:%M")
     
 # ================== إرسال الأذان ==================
+
+def format_time_12h(time_str):
+    t = datetime.strptime(time_str, "%H:%M")
+    return t.strftime("%I:%M %p")  # 12 ساعة
+    
 def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
 
-    time_now = monthly_times[today][prayer]
+time_now = monthly_times[today][prayer]
+formatted_time = format_time_12h(time_now)
 
-    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
+text = f"حان الآن موعد صلاة {prayer} ⏰ {formatted_time} 🕌"
 
     try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
