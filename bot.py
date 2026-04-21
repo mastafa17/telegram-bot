@@ -127,11 +127,10 @@ schedule.every().day.at("00:01").do(setup_today_schedule)
 threading.Thread(target=run_schedule).start()
 
 # ================== اختبار ==================
-@bot.message_handler(commands=['test'])
-def test(msg):
-    print("TEST RECEIVED")
-    send_adhan("fajr")
-
+@bot.message_handler(commands=['test_all'])
+def test_all(msg):
+    for prayer in ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"]:
+        send_adhan(prayer)
 # ================== تشغيل ==================
 bot.remove_webhook()
 time.sleep(1)
