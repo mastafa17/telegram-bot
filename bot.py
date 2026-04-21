@@ -128,8 +128,8 @@ threading.Thread(target=run_schedule).start()
 
 # ================== اختبار ==================
 @bot.message_handler(commands=['test'])
-def test(message):
-    bot.reply_to(message, "البوت شغال 👍")
+def test(msg):
+    send_adhan("fajr")
 
 # ================== تشغيل ==================
 bot.remove_webhook()
