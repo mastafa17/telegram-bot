@@ -79,10 +79,6 @@ def convert_to_utc(time_str):
     
 # ================== إرسال الأذان ==================
 
-def format_time_12h(time_str):
-    t = datetime.strptime(time_str, "%H:%M")
-    return t.strftime("%I:%M %p")  # 12 ساعة
-    
 def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
@@ -91,10 +87,10 @@ def send_adhan(prayer):
 
     text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
 
-try:
+    try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
         print(f"Sent {prayer} at {time_now}")
-except Exception as e:
+    except Exception as e:
         print("Error:", e)
 
 # ================== جدولة حسب اليوم ==================
