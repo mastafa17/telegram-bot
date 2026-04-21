@@ -144,4 +144,4 @@ bot.remove_webhook()
 
 print("STARTING POLLING...")
 
-bot.infinity_polling(skip_pending=True)
+bot.polling(none_stop=True)
