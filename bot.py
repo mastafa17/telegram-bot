@@ -87,10 +87,9 @@ def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
 
-time_now = monthly_times[today][prayer]
-formatted_time = format_time_12h(time_now)
+    time_now = monthly_times[today][prayer]
 
-text = f"حان الآن موعد صلاة {prayer} ⏰ {formatted_time} 🕌"
+    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
 
     try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
