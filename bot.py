@@ -129,11 +129,12 @@ threading.Thread(target=run_schedule).start()
 # ================== اختبار ==================
 @bot.message_handler(commands=['test'])
 def test(msg):
-    bot.send_message(msg.chat.id, "Testing Fajr Adhan...")
+    print("TEST RECEIVED")
     send_adhan("fajr")
 
 # ================== تشغيل ==================
 bot.remove_webhook()
+time.sleep(1)
 
 print("STARTING POLLING...")
 
