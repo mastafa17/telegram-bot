@@ -16,12 +16,6 @@ bot = telebot.TeleBot(TOKEN)
 
 print("BOT STARTED")
 
-
-# ================ اختبار ===============
-@bot.message_handler(func=lambda message: True)
-def debug_all(msg):
-    print("Received:", msg.text)
-
 # ================== file_id للصور ==================
 images = {
     "الفجر": "AgACAgQAAyEFAATra2AKAAMLaeZTnpGPdOL-q4hiAAHimtcBeHDCAAK4DGsbwe0wUxnuS0NczijbAQADAgADeAADOwQ",
@@ -86,7 +80,18 @@ def convert_to_utc(time_str):
 # ================== إرسال الأذان ==================
 
 def send_adhan(prayer):
-    print("FUNCTION CALLED:", prayer)
+    now = datetime.now(iraq_tz)
+    today = now.day
+
+    time_now = monthly_times[today][prayer]
+
+    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
+
+    try:
+        bot.send_photo(CHAT_ID, images[prayer], caption=text)
+        print(f"Sent {prayer} at {time_now}")
+    except Exception as e:
+        print("Error:", e)
 
 # ================== جدولة حسب اليوم ==================
 def setup_today_schedule():
