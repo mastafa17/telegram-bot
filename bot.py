@@ -62,23 +62,21 @@ monthly_times = {
 # ================== تحويل 12 ساعة ==================
 def to_12_hour(time_str):
     t = datetime.strptime(time_str, "%H:%M")
-    return t.strftime("%I:%M %p")
+    hour = int(t.strftime("%H"))
+
+    period = "صباحاً" if hour < 12 else "مساءً"
+
+    return t.strftime("%I:%M") + " " + period
 
 # ================== إرسال الأذان ==================
 def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
 
-    today_times = monthly_times.get(today, {})
-    time_now = today_times.get(prayer)
-
-    if not time_now:
-        print("No time found for", prayer)
-        return
-
+    time_now = monthly_times[today][prayer]
     time_12 = to_12_hour(time_now)
 
-    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
+    text = f"🕌 حان الآن موعد صلاة {prayer}\n⏰ الوقت: {time_12}"
 
     try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
