@@ -95,9 +95,11 @@ def send_adhan(prayer):
 
 # ================== جدولة حسب اليوم ==================
 def setup_today_schedule():
+    print("SETTING UP SCHEDULE...")
+
     schedule.clear()
 
-    now = datetime.now(iraq_tz)   # 👈 بدل datetime.now()
+    now = datetime.now(iraq_tz)
     today = now.day
 
     today_times = monthly_times.get(today)
@@ -107,8 +109,7 @@ def setup_today_schedule():
         return
 
     for prayer, time_str in today_times.items():
-        utc_time = convert_to_utc(time_str)  # 👈 التحويل هنا
-        schedule.every().day.at(utc_time).do(send_adhan, prayer)
+        schedule.every().day.at(time_str).do(send_adhan, prayer)
 
     print("Today's schedule:", today_times)
 
