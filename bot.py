@@ -78,7 +78,7 @@ def send_adhan(prayer):
 
     time_12 = to_12_hour(time_now)
 
-    text = f"🕌 حان الآن موعد صلاة {prayer}\n⏰ الوقت: {time_12}"
+    text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
 
     try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
