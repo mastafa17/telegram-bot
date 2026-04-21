@@ -94,7 +94,7 @@ def send_adhan(prayer):
 try:
         bot.send_photo(CHAT_ID, images[prayer], caption=text)
         print(f"Sent {prayer} at {time_now}")
-    except Exception as e:
+except Exception as e:
         print("Error:", e)
 
 # ================== جدولة حسب اليوم ==================
