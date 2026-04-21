@@ -127,11 +127,10 @@ schedule.every().day.at("00:01").do(setup_today_schedule)
 threading.Thread(target=run_schedule).start()
 
 # ================== اختبار ==================
-print("START TEST")
-
-send_adhan("fajr")
-
-print("TEST DONE")
+@bot.message_handler(commands=['test'])
+def test(msg):
+    bot.send_message(msg.chat.id, "Testing Fajr Adhan...")
+    send_adhan("fajr")
 
 # ================== تشغيل ==================
 bot.remove_webhook()
