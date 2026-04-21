@@ -16,6 +16,12 @@ bot = telebot.TeleBot(TOKEN)
 
 print("BOT STARTED")
 
+
+# ================ اختبار ===============
+@bot.message_handler(func=lambda message: True)
+def debug_all(msg):
+    print("Received:", msg.text)
+
 # ================== file_id للصور ==================
 images = {
     "الفجر": "AgACAgQAAyEFAATra2AKAAMLaeZTnpGPdOL-q4hiAAHimtcBeHDCAAK4DGsbwe0wUxnuS0NczijbAQADAgADeAADOwQ",
