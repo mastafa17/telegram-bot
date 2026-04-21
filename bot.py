@@ -4,6 +4,9 @@ import time
 import schedule
 import threading
 from datetime import datetime
+import pytz
+
+iraq_tz = pytz.timezone("Asia/Baghdad")
 
 # ================== الإعدادات ==================
 TOKEN = os.getenv("BOT_TOKEN")
@@ -56,20 +59,32 @@ monthly_times = {
     30: {"الفجر":"03:38","الظهر":"12:05","العصر":"15:47","المغرب":"18:53","العشاء":"20:17"},
 }
 
+def convert_to_utc(time_str):
+    local_time = datetime.strptime(time_str, "%H:%M")
+
+    now = datetime.now(iraq_tz)
+    local_time = local_time.replace(
+        year=now.year,
+        month=now.month,
+        day=now.day
+    )
+
+    local_dt = iraq_tz.localize(local_time)
+    utc_dt = local_dt.astimezone(pytz.utc)
+
+    return utc_dt.strftime("%H:%M")
+    
 # ================== إرسال الأذان ==================
 def send_adhan(prayer):
-    # نجيب الوقت من الجدول الحالي
-    today = datetime.now().day
+    now = datetime.now(iraq_tz)
+    today = now.day
+
     time_now = monthly_times[today][prayer]
 
     text = f"🕌 {time_now} حان الآن موعد صلاة {prayer}"
 
     try:
-        bot.send_photo(
-            CHAT_ID,
-            images[prayer],
-            caption=text
-        )
+        bot.send_photo(CHAT_ID, images[prayer], caption=text)
         print(f"Sent {prayer} at {time_now}")
     except Exception as e:
         print("Error:", e)
@@ -78,7 +93,9 @@ def send_adhan(prayer):
 def setup_today_schedule():
     schedule.clear()
 
-    today = datetime.now().day
+    now = datetime.now(iraq_tz)   # 👈 بدل datetime.now()
+    today = now.day
+
     today_times = monthly_times.get(today)
 
     if not today_times:
@@ -86,7 +103,8 @@ def setup_today_schedule():
         return
 
     for prayer, time_str in today_times.items():
-        schedule.every().day.at(time_str).do(send_adhan, prayer)
+        utc_time = convert_to_utc(time_str)  # 👈 التحويل هنا
+        schedule.every().day.at(utc_time).do(send_adhan, prayer)
 
     print("Today's schedule:", today_times)
 
