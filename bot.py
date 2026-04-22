@@ -133,7 +133,11 @@ def test(msg):
 threading.Thread(target=run_loop).start()
 
 bot.remove_webhook()
-time.sleep(10)
+time.sleep(2)
+
+print("BOT READY")
+
+bot.infinity_polling(skip_pending=True)
 
 print("BOT READY")
 bot.polling(none_stop=True)
