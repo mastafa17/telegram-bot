@@ -8,7 +8,8 @@ from flask import Flask, request
 
 iraq_tz = pytz.timezone("Asia/Baghdad")
 
-TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = BOT_TOKEN
 CHAT_ID = os.getenv("CHAT_ID")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
