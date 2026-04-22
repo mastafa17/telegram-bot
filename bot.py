@@ -93,7 +93,6 @@ sent_today = {}
 def check_adhan():
     now = datetime.now(iraq_tz)
     today = now.day
-    current_time = now.strftime("%H:%M")
 
     if today not in monthly_times:
         return
@@ -101,7 +100,14 @@ def check_adhan():
     for prayer, t in monthly_times[today].items():
         key = f"{today}-{prayer}"
 
-        if t == current_time and key not in sent_today:
+        prayer_time = datetime.strptime(t, "%H:%M").replace(
+            year=now.year, month=now.month, day=now.day
+        )
+
+        diff = (now - prayer_time).total_seconds()
+
+        # إذا داخل دقيقة من وقت الصلاة
+        if 0 <= diff < 60 and key not in sent_today:
             send_adhan(prayer)
             sent_today[key] = True
 
@@ -127,7 +133,7 @@ def test(msg):
 threading.Thread(target=run_loop).start()
 
 bot.remove_webhook()
-time.sleep(1)
+time.sleep(10)
 
 print("BOT READY")
 bot.polling(none_stop=True)
