@@ -12,6 +12,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 TOKEN = BOT_TOKEN
 CHAT_ID = os.getenv("CHAT_ID")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+print(BOT_TOKEN, CHAT_ID, WEBHOOK_URL)
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
