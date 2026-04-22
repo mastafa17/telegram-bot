@@ -8,7 +8,6 @@ import pytz
 # ================== الإعدادات ==================
 TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-
 bot = telebot.TeleBot(TOKEN)
 
 print("BOT STARTED")
@@ -18,11 +17,11 @@ iraq_tz = pytz.timezone("Asia/Baghdad")
 
 # ================== صور الصلوات ==================
 images = {
-    "الفجر": "PUT_FAJR_FILE_ID",
-    "الظهر": "PUT_DHUHR_FILE_ID",
-    "العصر": "PUT_ASR_FILE_ID",
-    "المغرب": "PUT_MAGHRIB_FILE_ID",
-    "العشاء": "PUT_ISHA_FILE_ID"
+    "الفجر": "AgACAgQAAyEFAATra2AKAAMLaeZTnpGPdOL-q4hiAAHimtcBeHDCAAK4DGsbwe0wUxnuS0NczijbAQADAgADeAADOwQ",
+    "الظهر": "AgACAgQAAyEFAATra2AKAAMWaeZajlCubRzED-5sBm3NxZY4b5sAAsEMaxvB7TBTnPJ4f2LSSnwBAAMCAAN4AAM7BA",
+    "العصر": "AgACAgQAAyEFAATra2AKAAMVaeZaIAmK2Z0mTVqDvfcsaqTlocEAAsAMaxvB7TBT5uG2_1rDNsUBAAMCAAN4AAM7BA",
+    "المغرب": "AgACAgQAAyEFAATra2AKAAMlaeZgEN4lyS9TksS_IPb4Vrrb3xEAAskMaxvB7TBTrlnQl6_sZyUBAAMCAAN4AAM7BA",
+    "العشاء": "AgACAgQAAyEFAATra2AKAAMXaeZapoas3WYoHbZAbqurFZCx0hUAAsIMaxvB7TBT5wQnB20X3Y4BAAMCAAN4AAM7BA"
 }
 
 # ================== جدول نيسان ==================
@@ -60,8 +59,11 @@ monthly_times = {
 }
 
 # ================== تنسيق الوقت 12 ساعة ==================
-def format_time_12h(t):
-    return datetime.strptime(t, "%H:%M").strftime("%I:%M %p")
+def to_12_hour(time_str):
+    t = datetime.strptime(time_str, "%H:%M")
+    hour = int(t.strftime("%H"))
+    period = "صباحاً" if hour < 12 else "مساءً"
+    return t.strftime("%I:%M") + " " + period
 
 # ================== إرسال الأذان ==================
 def send_adhan(prayer):
@@ -111,9 +113,14 @@ def run_loop():
 threading.Thread(target=run_loop).start()
 
 # ================== اختبار ==================
+@bot.message_handler(commands=['test_all'])
+def test_all(msg):
+    for prayer in ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"]:
+        send_adhan(prayer)
+
 @bot.message_handler(commands=['test'])
-def test(message):
-    bot.reply_to(message, "البوت شغال 👍")
+def test(msg):
+    send_adhan("العشاء")
 
 # ================== تشغيل البوت ==================
 bot.remove_webhook()
