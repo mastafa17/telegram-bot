@@ -70,9 +70,11 @@ def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
 
-    time_now = monthly_times[today][prayer]
-    from datetime import datetime
-    time_12 = datetime.now().strftime("%I:%M %p")
+    try:
+        time_now = monthly_times[today][prayer]
+    except KeyError:
+        print("No time found for today or prayer:", today, prayer)
+        return
 
     text = (
         f"حان الآن موعد صلاة {prayer} 🕌\n"
