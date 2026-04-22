@@ -133,11 +133,12 @@ def home():
 
 # ================== تشغيل ==================
 bot.remove_webhook()
-time.sleep(1)
+time.sleep(2)
+
 bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
 
-threading.Thread(target=run_loop).start()
-
 print("WEBHOOK READY")
+
+threading.Thread(target=run_loop, daemon=True).start()
 
 app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
