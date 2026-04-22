@@ -1,17 +1,19 @@
 import telebot
 import os
 import time
-import threading   
+import threading
 from datetime import datetime
 import pytz
+from flask import Flask, request
 
 iraq_tz = pytz.timezone("Asia/Baghdad")
 
-# ================== الإعدادات ==================
 TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 print("BOT STARTED")
 
@@ -24,7 +26,7 @@ images = {
     "العشاء": "AgACAgQAAyEFAATra2AKAAMXaeZapoas3WYoHbZAbqurFZCx0hUAAsIMaxvB7TBT5wQnB20X3Y4BAAMCAAN4AAM7BA"
 }
 
-# ================== مواقيت الصلاة ==================
+# ================== المواقيت ==================
 monthly_times = {
     1:  {"الفجر":"04:23","الظهر":"12:11","العصر":"15:43","المغرب":"18:29","العشاء":"19:46"},
     2:  {"الفجر":"04:21","الظهر":"12:11","العصر":"15:44","المغرب":"18:30","العشاء":"19:47"},
@@ -79,15 +81,11 @@ def send_adhan(prayer):
     text = (
         f"حان الآن موعد صلاة {prayer} 🕌\n"
         f"الوقت: {time_12} ⏰"
-    )
 
-    try:
-        bot.send_photo(CHAT_ID, images[prayer], caption=text)
-        print(f"Sent {prayer} at {time_12}")
-    except Exception as e:
-        print("Error:", e)
+    bot.send_photo(CHAT_ID, images[prayer], caption=text)
+    print(f"Sent {prayer}")
 
-# ================== النظام الجديد (بديل schedule) ==================
+# ================== نظام الأذان ==================
 sent_today = {}
 
 def check_adhan():
@@ -106,38 +104,39 @@ def check_adhan():
 
         diff = (now - prayer_time).total_seconds()
 
-        # إذا داخل دقيقة من وقت الصلاة
         if 0 <= diff < 60 and key not in sent_today:
             send_adhan(prayer)
             sent_today[key] = True
 
-# ================== loop ==================
 def run_loop():
-    print("ADHAN SYSTEM RUNNING...")
     while True:
         check_adhan()
-        time.sleep(20)
+        time.sleep(10)
 
-# ================== أوامر التليجرام ==================
-
-@bot.message_handler(commands=['test_all'])
-def test_all(msg):
-    for prayer in ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"]:
-        send_adhan(prayer)
-
+# ================== أوامر ==================
 @bot.message_handler(commands=['test'])
 def test(msg):
     send_adhan("العشاء")
 
+# ================== webhook ==================
+@app.route(f"/{TOKEN}", methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "ok"
+
+@app.route("/")
+def home():
+    return "Bot is running"
+
 # ================== تشغيل ==================
+bot.remove_webhook()
+time.sleep(1)
+bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+
 threading.Thread(target=run_loop).start()
 
-bot.remove_webhook()
-time.sleep(2)
+print("WEBHOOK READY")
 
-print("BOT READY")
-
-bot.infinity_polling(skip_pending=True)
-
-print("BOT READY")
-bot.polling(none_stop=True)
+app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
