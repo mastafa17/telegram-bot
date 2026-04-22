@@ -73,12 +73,15 @@ def send_adhan(prayer):
     try:
         time_now = monthly_times[today][prayer]
     except KeyError:
-        print("No time found for today or prayer:", today, prayer)
+        print("No time found:", today, prayer)
         return
+
+    # تحويل الوقت إلى 12 ساعة باستخدام دالتك
+    time_12 = format_time_12h(time_now)
 
     text = (
         f"حان الآن موعد صلاة {prayer} 🕌\n"
-        f"الوقت: {time_now} ⏰"
+        f"الوقت: {time_12} ⏰"
     )
 
     try:
