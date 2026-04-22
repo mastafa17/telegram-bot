@@ -4,30 +4,28 @@ import time
 import threading
 from datetime import datetime
 import pytz
-from flask import Flask, request
 
-iraq_tz = pytz.timezone("Asia/Baghdad")
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-TOKEN = BOT_TOKEN
+# ================== الإعدادات ==================
+TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
 
 print("BOT STARTED")
 
-# ================== الصور ==================
+# ================== Timezone العراق ==================
+iraq_tz = pytz.timezone("Asia/Baghdad")
+
+# ================== صور الصلوات ==================
 images = {
-    "الفجر": "AgACAgQAAyEFAATra2AKAAMLaeZTnpGPdOL-q4hiAAHimtcBeHDCAAK4DGsbwe0wUxnuS0NczijbAQADAgADeAADOwQ",
-    "الظهر": "AgACAgQAAyEFAATra2AKAAMWaeZajlCubRzED-5sBm3NxZY4b5sAAsEMaxvB7TBTnPJ4f2LSSnwBAAMCAAN4AAM7BA",
-    "العصر": "AgACAgQAAyEFAATra2AKAAMVaeZaIAmK2Z0mTVqDvfcsaqTlocEAAsAMaxvB7TBT5uG2_1rDNsUBAAMCAAN4AAM7BA",
-    "المغرب": "AgACAgQAAyEFAATra2AKAAMlaeZgEN4lyS9TksS_IPb4Vrrb3xEAAskMaxvB7TBTrlnQl6_sZyUBAAMCAAN4AAM7BA",
-    "العشاء": "AgACAgQAAyEFAATra2AKAAMXaeZapoas3WYoHbZAbqurFZCx0hUAAsIMaxvB7TBT5wQnB20X3Y4BAAMCAAN4AAM7BA"
+    "الفجر": "PUT_FAJR_FILE_ID",
+    "الظهر": "PUT_DHUHR_FILE_ID",
+    "العصر": "PUT_ASR_FILE_ID",
+    "المغرب": "PUT_MAGHRIB_FILE_ID",
+    "العشاء": "PUT_ISHA_FILE_ID"
 }
 
-# ================== المواقيت ==================
+# ================== جدول نيسان ==================
 monthly_times = {
     1:  {"الفجر":"04:23","الظهر":"12:11","العصر":"15:43","المغرب":"18:29","العشاء":"19:46"},
     2:  {"الفجر":"04:21","الظهر":"12:11","العصر":"15:44","المغرب":"18:30","العشاء":"19:47"},
@@ -61,85 +59,65 @@ monthly_times = {
     30: {"الفجر":"03:38","الظهر":"12:05","العصر":"15:47","المغرب":"18:53","العشاء":"20:17"},
 }
 
-# ================== تحويل 12 ساعة ==================
-def to_12_hour(time_str):
-    t = datetime.strptime(time_str, "%H:%M")
-    hour = int(t.strftime("%H"))
-    period = "صباحاً" if hour < 12 else "مساءً"
-    return t.strftime("%I:%M") + " " + period
+# ================== تنسيق الوقت 12 ساعة ==================
+def format_time_12h(t):
+    return datetime.strptime(t, "%H:%M").strftime("%I:%M %p")
 
 # ================== إرسال الأذان ==================
 def send_adhan(prayer):
     now = datetime.now(iraq_tz)
     today = now.day
 
-    if today not in monthly_times:
-        return
-
     time_now = monthly_times[today][prayer]
-    time_12 = to_12_hour(time_now)
+    formatted_time = format_time_12h(time_now)
 
     text = (
         f"حان الآن موعد صلاة {prayer} 🕌\n"
         f"الوقت: {time_12} ⏰"
     )
 
-    bot.send_photo(CHAT_ID, images[prayer], caption=text)
-    print(f"Sent {prayer}")
+    try:
+        bot.send_photo(CHAT_ID, images[prayer], caption=text)
+        print("Sent:", prayer)
+    except Exception as e:
+        print("Error:", e)
 
-# ================== نظام الأذان ==================
-sent_today = {}
+# ================== فحص كل دقيقة ==================
+last_sent = {}
 
-def check_adhan():
+def check_prayers():
+    global last_sent
+
     now = datetime.now(iraq_tz)
+    current_time = now.strftime("%H:%M")
     today = now.day
 
-    if today not in monthly_times:
-        return
+    today_times = monthly_times.get(today, {})
 
-    for prayer, t in monthly_times[today].items():
-        key = f"{today}-{prayer}"
+    for prayer, t in today_times.items():
+        if current_time == t:
+            key = f"{today}_{prayer}"
 
-        prayer_time = datetime.strptime(t, "%H:%M").replace(
-            year=now.year, month=now.month, day=now.day
-        )
+            if last_sent.get(key) != True:
+                send_adhan(prayer)
+                last_sent[key] = True
 
-        diff = (now - prayer_time).total_seconds()
-
-        if 0 <= diff < 60 and key not in sent_today:
-            send_adhan(prayer)
-            sent_today[key] = True
-
+# ================== تشغيل الفحص ==================
 def run_loop():
     while True:
-        check_adhan()
-        time.sleep(10)
+        check_prayers()
+        time.sleep(30)
 
-# ================== أوامر ==================
+threading.Thread(target=run_loop).start()
+
+# ================== اختبار ==================
 @bot.message_handler(commands=['test'])
-def test(msg):
-    send_adhan("العشاء")
+def test(message):
+    bot.reply_to(message, "البوت شغال 👍")
 
-# ================== webhook ==================
-@app.route(f"/{TOKEN}", methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return "ok"
-
-@app.route("/")
-def home():
-    return "Bot is running"
-
-# ================== تشغيل ==================
+# ================== تشغيل البوت ==================
 bot.remove_webhook()
-time.sleep(2)
 
-bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+print("STARTING POLLING...")
 
-print("WEBHOOK READY")
-
-threading.Thread(target=run_loop, daemon=True).start()
-
-app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+bot.infinity_polling(skip_pending=True)
