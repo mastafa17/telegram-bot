@@ -127,7 +127,7 @@ def test(msg):
 
 # ================== تشغيل ==================
 bot.remove_webhook()
-
+bot.stop_polling()
 print("STARTING POLLING...")
 
 bot.infinity_polling(skip_pending=True)
