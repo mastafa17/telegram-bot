@@ -71,11 +71,12 @@ def send_adhan(prayer):
     today = now.day
 
     time_now = monthly_times[today][prayer]
-    formatted_time = format_time_12h(time_now)
+    from datetime import datetime
+    time_12 = datetime.now().strftime("%I:%M %p")
 
     text = (
         f"حان الآن موعد صلاة {prayer} 🕌\n"
-        f"الوقت: {time_12} ⏰"
+        f"الوقت: {time_now} ⏰"
     )
 
     try:
