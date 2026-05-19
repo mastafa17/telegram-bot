@@ -49,11 +49,11 @@ print("BOT STARTED")
 # ضع file_id الصحيح لكل صورة
 # =========================
 images = {
-    "الفجر": "AgACAgQAAyEFAATra2AKAAMLaeZTnpGPdOL-q4hiAAHimtcBeHDCAAK4DGsbwe0wUxnuS0NczijbAQADAgADeAADOwQ",
-    "الظهر": "AgACAgQAAyEFAATra2AKAAMWaeZajlCubRzED-5sBm3NxZY4b5sAAsEMaxvB7TBTnPJ4f2LSSnwBAAMCAAN4AAM7BA",
-    "العصر": "AgACAgQAAyEFAATra2AKAAMVaeZaIAmK2Z0mTVqDvfcsaqTlocEAAsAMaxvB7TBT5uG2_1rDNsUBAAMCAAN4AAM7BA",
-    "المغرب": "AgACAgQAAyEFAATra2AKAAMlaeZgEN4lyS9TksS_IPb4Vrrb3xEAAskMaxvB7TBTrlnQl6_sZyUBAAMCAAN4AAM7BA",
-    "العشاء": "AgACAgQAAyEFAATra2AKAAMXaeZapoas3WYoHbZAbqurFZCx0hUAAsIMaxvB7TBT5wQnB20X3Y4BAAMCAAN4AAM7BA",
+    "الفجر": "AgACAgQAAxkBAAPDagx24sOAWya1m2Yu48bpMw3CunAAAhgOaxvXwWBQKjMRp_ZwV5kBAAMCAAN5AAM7BA",
+    "الظهر": "AgACAgQAAxkBAAPBagx20q9M2h6faJBEp2z7wUqMZFkAAhcOaxvXwWBQdckhJVTTd-YBAAMCAAN5AAM7BA",
+    "العصر": "AgACAgQAAxkBAAO8agx2d8aNz3wvXZLm7p8aBu2ckqoAAhUOaxvXwWBQiTznM307y_wBAAMCAAN5AAM7BA",
+    "المغرب": "AgACAgQAAxkBAAPFagx28cAt1uc7UJW93m9MsHhtSmAAAhkOaxvXwWBQ2Aqi_3Sml60BAAMCAAN5AAM7BA",
+    "العشاء": "AgACAgQAAxkBAAO_agx2vskAAX8S5CgRe_G06uVI3Z-pAAIWDmsb18FgUOhHmqp4-IqqAQADAgADeQADOwQ",
 }
 
 # =========================
@@ -230,12 +230,6 @@ def test(msg):
 
 
 # =========================
-@bot.message_handler(content_types=['photo'])
-def get_photo_id(message):
-    photo = message.photo[-1]  # أكبر/أوضح نسخة من الصورة
-    file_id = photo.file_id
-
-    bot.reply_to(message, f"file_id:\n{file_id}")
 # التشغيل
 # =========================
 def main():
