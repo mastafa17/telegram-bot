@@ -230,6 +230,12 @@ def test(msg):
 
 
 # =========================
+@bot.message_handler(content_types=['photo'])
+def get_photo_id(message):
+    photo = message.photo[-1]  # أكبر/أوضح نسخة من الصورة
+    file_id = photo.file_id
+
+    bot.reply_to(message, f"file_id:\n{file_id}")
 # التشغيل
 # =========================
 def main():
