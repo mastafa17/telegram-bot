@@ -8,6 +8,7 @@ from datetime import datetime
 
 import pytz
 import telebot
+from telebot.apihelper import ApiTelegramException
 
 # =========================
 # إعدادات عامة
@@ -16,10 +17,11 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
 logger = logging.getLogger("prayer-bot")
 
 IRAQ_TZ = pytz.timezone("Asia/Baghdad")
-CHECK_INTERVAL = 20  # ثواني
+CHECK_INTERVAL = 20  # كل 20 ثانية يفحص وقت الصلاة
 
 # =========================
 # متغيرات البيئة
@@ -40,13 +42,12 @@ try:
 except ValueError:
     CHAT_ID = CHAT_ID_RAW
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
-print("BOT STARTED")
+logger.info("BOT STARTED")
 
 # =========================
 # صور الصلوات
-# ضع file_id الصحيح لكل صورة
 # =========================
 images = {
     "الفجر": "AgACAgQAAxkBAAPDagx24sOAWya1m2Yu48bpMw3CunAAAhgOaxvXwWBQKjMRp_ZwV5kBAAMCAAN5AAM7BA",
@@ -57,7 +58,7 @@ images = {
 }
 
 # =========================
-# جدول الشهور
+# جدول الشهر
 # =========================
 monthly_times = {
     1:  {"الفجر": "03:36", "الظهر": "12:05", "العصر": "15:47", "المغرب": "18:54", "العشاء": "20:18"},
@@ -94,8 +95,10 @@ monthly_times = {
 }
 
 PRAYERS = ["الفجر", "الظهر", "العصر", "المغرب", "العشاء"]
+
 last_sent = set()
 lock = threading.Lock()
+
 
 # =========================
 # دوال مساعدة
@@ -116,12 +119,15 @@ def get_today_times() -> dict:
     return monthly_times.get(day, {})
 
 
+def build_caption(prayer: str, prayer_time: str) -> str:
+    time_12 = format_time_12h(prayer_time)
+    return f"حان الآن موعد صلاة {prayer} 🕌\nالوقت: {time_12} ⏰"
+
+
 def send_adhan(prayer: str, target_chat_id=None) -> bool:
     """
-    إذا target_chat_id فارغ:
-        يرسل للقناة CHAT_ID
-    إذا target_chat_id موجود:
-        يرسل لهذا الشخص/المحادثة فقط، وهذا نستخدمه للاختبار
+    target_chat_id = None  يعني إرسال للقناة
+    target_chat_id موجود يعني إرسال خاص للاختبار
     """
     try:
         day = now_iraq().day
@@ -131,68 +137,90 @@ def send_adhan(prayer: str, target_chat_id=None) -> bool:
             logger.warning(f"No schedule found for day {day}")
             return False
 
-        time_now = today_times.get(prayer)
-        if not time_now:
+        prayer_time = today_times.get(prayer)
+        if not prayer_time:
             logger.warning(f"No time found for prayer={prayer} on day={day}")
             return False
 
         file_id = images.get(prayer)
         if not file_id:
-            logger.warning(f"No image file_id found for prayer={prayer}")
+            logger.warning(f"No image found for prayer={prayer}")
             return False
 
-        time_12 = format_time_12h(time_now)
-        text = f"حان الآن موعد صلاة {prayer} 🕌\nالوقت: {time_12} ⏰"
-
+        caption = build_caption(prayer, prayer_time)
         send_to = target_chat_id if target_chat_id is not None else CHAT_ID
 
-        logger.info(f"Sending prayer: {prayer}")
-        logger.info(f"Using file_id: {file_id}")
-        logger.info(f"Target chat: {send_to}")
+        logger.info(f"Sending prayer={prayer}")
+        logger.info(f"Target chat={send_to}")
+        logger.info(f"Using file_id={file_id}")
 
-        bot.send_photo(send_to, file_id, caption=text)
+        bot.send_photo(send_to, file_id, caption=caption)
 
-        logger.info(f"Sent: {prayer}")
+        logger.info(f"Sent successfully: {prayer}")
         return True
 
+    except ApiTelegramException as e:
+        logger.error(f"Telegram error while sending {prayer}: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
     except Exception as e:
-        logger.error(f"send_adhan error for {prayer}: {e}")
+        logger.error(f"Unknown error while sending {prayer}: {e}")
         logger.error(traceback.format_exc())
         return False
 
 
+# =========================
+# نظام الإرسال التلقائي
+# =========================
 def check_prayers():
     now = now_iraq()
     current_time = now.strftime("%H:%M")
-    day = now.day
-    today_times = monthly_times.get(day, {})
+    current_day = now.day
 
-    for prayer, prayer_time in today_times.items():
+    today_times = monthly_times.get(current_day, {})
+    if not today_times:
+        return
+
+    for prayer in PRAYERS:
+        prayer_time = today_times.get(prayer)
+
+        if not prayer_time:
+            continue
+
         if current_time == prayer_time:
-            key = f"{day}_{prayer}"
+            key = f"{now.strftime('%Y-%m-%d')}_{prayer}"
+
             with lock:
-                already_sent = key in last_sent
-                if not already_sent:
-                    if send_adhan(prayer):
-                        last_sent.add(key)
+                if key in last_sent:
+                    continue
+
+                sent = send_adhan(prayer)
+
+                if sent:
+                    last_sent.add(key)
 
 
 def clean_old_sent_markers():
-    current_day = now_iraq().day
+    today_prefix = now_iraq().strftime("%Y-%m-%d")
+
     with lock:
-        old_keys = {k for k in last_sent if not k.startswith(f"{current_day}_")}
+        old_keys = {k for k in last_sent if not k.startswith(today_prefix)}
+
         if old_keys:
             last_sent.difference_update(old_keys)
+            logger.info(f"Cleaned old sent markers: {len(old_keys)}")
 
 
-def run_loop():
+def run_prayer_loop():
     logger.info("Prayer loop started")
+
     while True:
         try:
             check_prayers()
             clean_old_sent_markers()
         except Exception as e:
-            logger.error(f"Loop error: {e}")
+            logger.error(f"Prayer loop error: {e}")
             logger.error(traceback.format_exc())
 
         time.sleep(CHECK_INTERVAL)
@@ -206,45 +234,50 @@ def start(msg):
     text = (
         "أهلاً بك 👋\n\n"
         "هذا بوت مواقيت الصلاة.\n\n"
-        "الأوامر المتاحة:\n"
+        "الأوامر:\n"
         "/today - عرض مواقيت اليوم\n"
         "/test المغرب - اختبار صورة صلاة معينة بالخاص\n"
         "/test_all - اختبار كل الصور بالخاص\n\n"
-        "ملاحظة: أوامر الاختبار ترسل لك أنت فقط، وليس للقناة."
+        "ملاحظة: الاختبار يرسل لك أنت فقط، وليس للقناة."
     )
+
     bot.reply_to(msg, text)
 
 
 @bot.message_handler(commands=["today"])
 def today(msg):
     times = get_today_times()
+
     if not times:
         bot.reply_to(msg, "ما لقيت جدول لليوم.")
         return
 
     lines = ["مواقيت اليوم:\n"]
+
     for prayer in PRAYERS:
-        t = times.get(prayer)
-        if t:
-            lines.append(f"{prayer}: {format_time_12h(t)}")
+        prayer_time = times.get(prayer)
+        if prayer_time:
+            lines.append(f"{prayer}: {format_time_12h(prayer_time)}")
 
     bot.reply_to(msg, "\n".join(lines))
 
 
-@bot.message_handler(commands=["test_all"])
-def test_all(msg):
-    bot.reply_to(msg, "تمام، راح أرسل كل صور الصلوات هنا بالخاص للتجربة.")
-
-    for prayer in PRAYERS:
-        send_adhan(prayer, target_chat_id=msg.chat.id)
-        time.sleep(1)
-
-
 @bot.message_handler(commands=["test"])
 def test(msg):
+    """
+    مثال:
+    /test المغرب
+    يرسل الصورة إلى صاحب الأمر بالخاص فقط
+    """
+    user_id = msg.from_user.id if msg.from_user else None
+
+    if not user_id:
+        bot.reply_to(msg, "ما قدرت أعرف المستخدم.")
+        return
+
     parts = msg.text.split(maxsplit=1)
 
-    if len(parts) == 1:
+    if len(parts) < 2:
         bot.reply_to(
             msg,
             "اكتب اسم الصلاة بعد الأمر، مثل:\n\n"
@@ -271,7 +304,75 @@ def test(msg):
         )
         return
 
-    send_adhan(prayer, target_chat_id=msg.chat.id)
+    bot.reply_to(msg, f"جاري إرسال اختبار صلاة {prayer} إلى الخاص...")
+
+    ok = send_adhan(prayer, target_chat_id=user_id)
+
+    if ok:
+        if msg.chat.id != user_id:
+            bot.reply_to(msg, "تم إرسال الاختبار بالخاص ✅")
+    else:
+        bot.reply_to(
+            msg,
+            "ما قدرت أرسل لك بالخاص.\n"
+            "افتح محادثة البوت واضغط /start ثم جرب مرة ثانية."
+        )
+
+
+@bot.message_handler(commands=["test_all"])
+def test_all(msg):
+    """
+    يرسل كل الصور لصاحب الأمر بالخاص فقط
+    """
+    user_id = msg.from_user.id if msg.from_user else None
+
+    if not user_id:
+        bot.reply_to(msg, "ما قدرت أعرف المستخدم.")
+        return
+
+    bot.reply_to(msg, "جاري إرسال كل صور الصلوات إلى الخاص...")
+
+    all_ok = True
+
+    for prayer in PRAYERS:
+        ok = send_adhan(prayer, target_chat_id=user_id)
+        if not ok:
+            all_ok = False
+        time.sleep(1)
+
+    if all_ok:
+        if msg.chat.id != user_id:
+            bot.reply_to(msg, "تم إرسال كل الاختبارات بالخاص ✅")
+    else:
+        bot.reply_to(
+            msg,
+            "بعض الصور ما انرسلت.\n"
+            "افتح الخاص ويا البوت واضغط /start، ثم جرب مرة ثانية."
+        )
+
+
+@bot.message_handler(content_types=["photo"])
+def get_photo_file_id(msg):
+    """
+    هذا يفيدك حتى تجيب file_id لأي صورة جديدة.
+    ارسل الصورة للبوت بالخاص، وهو يرجع لك file_id.
+    """
+    try:
+        photo = msg.photo[-1]
+        file_id = photo.file_id
+
+        bot.reply_to(
+            msg,
+            "File ID للصورة:\n\n"
+            f"{file_id}"
+        )
+
+        logger.info(f"New photo file_id: {file_id}")
+
+    except Exception as e:
+        logger.error(f"get_photo_file_id error: {e}")
+        logger.error(traceback.format_exc())
+        bot.reply_to(msg, "صار خطأ أثناء استخراج file_id.")
 
 
 # =========================
@@ -284,21 +385,35 @@ def main():
     except Exception as e:
         logger.warning(f"remove_webhook warning: {e}")
 
-    threading.Thread(target=run_loop, daemon=True).start()
+    prayer_thread = threading.Thread(target=run_prayer_loop, daemon=True)
+    prayer_thread.start()
+
     logger.info("STARTING POLLING...")
 
-    while True:
-        try:
-            bot.infinity_polling(
-                skip_pending=True,
-                timeout=30,
-                long_polling_timeout=30,
-                logger_level=logging.INFO,
-            )
-        except Exception as e:
-            logger.error(f"Polling crashed: {e}")
-            logger.error(traceback.format_exc())
-            time.sleep(5)
+    try:
+        bot.infinity_polling(
+            skip_pending=True,
+            timeout=30,
+            long_polling_timeout=30,
+            logger_level=logging.INFO,
+        )
+
+    except ApiTelegramException as e:
+        logger.error(f"Polling Telegram error: {e}")
+        logger.error(traceback.format_exc())
+
+        if "409" in str(e) or "Conflict" in str(e):
+            logger.error("يوجد نسخة ثانية من نفس البوت شغالة. أوقف النسخة القديمة.")
+            sys.exit(1)
+
+        time.sleep(5)
+        main()
+
+    except Exception as e:
+        logger.error(f"Polling crashed: {e}")
+        logger.error(traceback.format_exc())
+        time.sleep(5)
+        main()
 
 
 if __name__ == "__main__":
