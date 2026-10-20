@@ -379,42 +379,44 @@ def get_photo_file_id(msg):
 # التشغيل
 # =========================
 def main():
+    logger.info("BOT STARTED")
+
+    # إزالة الـ Webhook مرة واحدة قبل بدء Polling
     try:
         bot.remove_webhook()
         logger.info("Webhook removed")
-    except Exception as e:
-        logger.warning(f"remove_webhook warning: {e}")
+    except Exception:
+        logger.exception("Webhook removal failed")
+        raise
 
-    prayer_thread = threading.Thread(target=run_prayer_loop, daemon=True)
+    prayer_thread = threading.Thread(
+        target=run_prayer_loop,
+        daemon=True,
+        name="prayer-loop",
+    )
     prayer_thread.start()
 
     logger.info("STARTING POLLING...")
 
-    try:
-        bot.infinity_polling(
-            skip_pending=True,
-            timeout=30,
-            long_polling_timeout=30,
-            logger_level=logging.INFO,
-        )
-
-    except ApiTelegramException as e:
-        logger.error(f"Polling Telegram error: {e}")
-        logger.error(traceback.format_exc())
-
-        if "409" in str(e) or "Conflict" in str(e):
-            logger.error("يوجد نسخة ثانية من نفس البوت شغالة. أوقف النسخة القديمة.")
-            sys.exit(1)
-
-        time.sleep(5)
-        main()
-
-    except Exception as e:
-        logger.error(f"Polling crashed: {e}")
-        logger.error(traceback.format_exc())
-        time.sleep(5)
-        main()
+    # لا تعاود تشغيل Polling تلقائياً عند تعارض 409
+    bot.infinity_polling(
+        skip_pending=True,
+        timeout=30,
+        long_polling_timeout=30,
+        logger_level=logging.INFO,
+    )
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ApiTelegramException as e:
+        logger.critical("Telegram API error: %s", e)
+        if "409" in str(e) or "Conflict" in str(e):
+            logger.critical(
+                "Polling conflict: check for another running bot instance."
+            )
+        sys.exit(1)
+    except Exception:
+        logger.exception("Fatal bot error")
+        sys.exit(1)
